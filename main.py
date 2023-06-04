@@ -12,7 +12,7 @@ import terminalio
 from adafruit_touchscreen import Touchscreen
 
 # Define the URL we'll be sending requests to
-TEXT_URL = "https://ancient-mountain-86014.herokuapp.com/api/hello"
+TEXT_URL = "https://message-reader-server.herokuapp.com/api/hello"
 
 def initialize_secrets():
     ''' 
@@ -85,14 +85,13 @@ def load_font():
 
 # Main code execution
 def main():
-    # secrets = initialize_secrets()
-    # esp32_cs, esp32_ready, esp32_reset = initialize_pins()
-    # esp = initialize_esp(esp32_cs, esp32_ready, esp32_reset)
-    # requests.set_socket(socket, esp)
-    # connect_to_wifi(esp, secrets)
-    # r = fetch_data(esp, TEXT_URL)
-    # message_text = parse_json_response(r)
-    message_text = "Hello, World!"
+    secrets = initialize_secrets()
+    esp32_cs, esp32_ready, esp32_reset = initialize_pins()
+    esp = initialize_esp(esp32_cs, esp32_ready, esp32_reset)
+    requests.set_socket(socket, esp)
+    connect_to_wifi(esp, secrets)
+    r = fetch_data(esp, TEXT_URL)
+    message_text = parse_json_response(r)
     
     # Initialize the display
     display = board.DISPLAY
