@@ -66,11 +66,8 @@ def parse_json_response(r):
     This function loads the response text as JSON and returns the parsed message
     '''
     json_data = json.loads(r.text)
-    # use 'message' if it exists, otherwise use 'clickMessage'
-    message_text = json_data['message'] 
+    return json_data
 
-    r.close() # Close the response here, after we've finished reading from it
-    return message_text
 
 def center_align(text, width):
     ''' 
@@ -86,6 +83,23 @@ def load_font():
     font = bitmap_font.load_font("/fonts/Arial-12.bdf")
     return font
 
+def hex_to_pyportal_color(hex_code):
+    # Remove the '#' symbol if present
+    hex_code = hex_code.lstrip("#")
+    
+    # Convert the hex code to an integer
+    color_int = int(hex_code, 16)
+    
+    # Extract the individual RGB components
+    red = (color_int >> 16) & 0xFF
+    green = (color_int >> 8) & 0xFF
+    blue = color_int & 0xFF
+    
+    # Convert the RGB values to the 16-bit PyPortal format
+    pyportal_color = (red & 0xF8) << 8 | (green & 0xFC) << 3 | (blue & 0xF8) >> 3
+    
+    return pyportal_color
+
 # Main code execution
 def main():
     secrets = initialize_secrets()
@@ -94,7 +108,10 @@ def main():
     requests.set_socket(socket, esp)
     connect_to_wifi(esp, secrets)
     r = fetch_data(TEXT_URL)
-    message_text = parse_json_response(r)
+    parsed_response = parse_json_response(r)
+    message_text = parsed_response['message']
+    message_color = parsed_response['color']
+    message_color = hex_to_pyportal_color(message_color)
     
     # Initialize the display
     display = board.DISPLAY
@@ -106,11 +123,11 @@ def main():
     
     # Load the font
     font = load_font()
-    
-    # Create a styled text label
-    text_label = label.Label(font, text=message_text, color=0xFFFF00)  # Yellow text color for visibility
-    text_label.x = display.width // 2 - text_label.width // 2
-    text_label.y = display.height // 2 - text_label.height // 2
+
+    # Create a styled text label (use helloColor value)
+    text_label = label.Label(font, text=message_text, color=message_color)
+    text_label.x = display.width // 2 - text_label.width // 2 # Center the text horizontally
+    text_label.y = display.height // 2 - text_label.height // 2 # Center the text vertically
     group.append(text_label)
 
     # Update the display
@@ -121,7 +138,8 @@ def main():
         p = ts.touch_point
         if p:
             r = fetch_data(CLICK_URL)
-            message_text = parse_json_response(r)
+            parsed_response = parse_json_response(r)
+            message_text = parsed_response['message']
             
             text_label.text = message_text
             text_label.x = display.width // 2 - text_label.width // 2
