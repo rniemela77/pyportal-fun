@@ -13,6 +13,7 @@ from adafruit_touchscreen import Touchscreen
 
 # Define the URL we'll be sending requests to
 TEXT_URL = "https://message-reader-server.herokuapp.com/api/hello"
+CLICK_URL = "https://message-reader-server.herokuapp.com/api/click"
 
 def initialize_secrets():
     ''' 
@@ -53,7 +54,7 @@ def connect_to_wifi(esp, secrets):
         except OSError:
             continue
 
-def fetch_data(esp, url):
+def fetch_data(url):
     ''' 
     This function fetches data from the specified URL and returns the response
     '''
@@ -65,7 +66,9 @@ def parse_json_response(r):
     This function loads the response text as JSON and returns the parsed message
     '''
     json_data = json.loads(r.text)
-    message_text = json_data['message']
+    # use 'message' if it exists, otherwise use 'clickMessage'
+    message_text = json_data['message'] 
+
     r.close() # Close the response here, after we've finished reading from it
     return message_text
 
@@ -90,7 +93,7 @@ def main():
     esp = initialize_esp(esp32_cs, esp32_ready, esp32_reset)
     requests.set_socket(socket, esp)
     connect_to_wifi(esp, secrets)
-    r = fetch_data(esp, TEXT_URL)
+    r = fetch_data(TEXT_URL)
     message_text = parse_json_response(r)
     
     # Initialize the display
@@ -117,7 +120,10 @@ def main():
     while True:
         p = ts.touch_point
         if p:
-            text_label.text = "Clicked"
+            r = fetch_data(CLICK_URL)
+            message_text = parse_json_response(r)
+            
+            text_label.text = message_text
             text_label.x = display.width // 2 - text_label.width // 2
             text_label.y = display.height // 2 - text_label.height // 2
             display.refresh()
